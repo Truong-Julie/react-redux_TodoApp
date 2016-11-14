@@ -1,7 +1,7 @@
 import {createStore} from 'redux';
 import deepFreeze from 'deep-freeze';
 import expect from 'expect';
-
+import {combineReducers} from 'redux';
 /* 
 todo format:
   {
@@ -20,39 +20,49 @@ todo format:
       //   }
       //   return todo;
       // });
+
+// Example of how to use Object.assign
+// return Object.assign({}, state, {completed: !state.completed});
+
+
+
 const todo = (state, action) => {
-  return {
-    id: action.id,
-    text: action.text,
-    completed: false
-  } 
+  switch (action.type) {
+    case 'ADD_TODO':
+      return {
+        id: action.id,
+        text: action.text,
+        completed: false
+      }
+    case 'TOGGLE_TODO':
+      if (state.id !== action.id) {
+        return state;
+      }
+      return {
+        ...state,
+        completed: !state.completed
+      }
+    default:
+      return state; 
+  }
 } 
 
 const todos = (state = [], action) => {
   switch (action.type) {
     case 'ADD_TODO':
       return [
-        ...state, {
-          id: action.id,
-          text: action.text,
-          completed: false
-        }      
+        ...state, 
+        todo(undefined, action) 
       ];
     case 'TOGGLE_TODO':
-      return state.map(todo => {
-        if (todo.id !== action.id) {
-          return todo;
-        }
-        // return Object.assign({}, todo, {completed: !todo.completed});
-        return {
-          ...todo,
-          completed: !todo.completed
-        }
+      return state.map(t => {
+        return todo(t, action);
       });
     default: 
       return state;
   }
 };
+
 
 const testAddTodo = () => {
   const stateBefore = [];
@@ -126,6 +136,21 @@ const testToggleTodo = () => {
     .toEqual(stateAfter);
 };
 
+const setVisibilityFilter = (state = 'ALL', action) => {
+  switch (action.type) {
+    case 'SET_VISIBILITY_FILTER':
+      return action.filter;
+    default: 
+      return state;
+  }
+}
+
+
+const todoApp = combineReducers({
+  todos,
+  setVisibilityFilter
+})
+
 testAddTodo();
 testToggleTodo();
 console.log('All tests passed');
@@ -146,6 +171,6 @@ const counter = (state = 0, action) => {
 
 const store = createStore(counter);
 */
-const store = createStore(todos, window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__());
+const store = createStore(todoApp);
 
 export default store;
